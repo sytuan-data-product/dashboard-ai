@@ -107,7 +107,7 @@
 
     .cards {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 16px;
     }
     .card {
@@ -138,7 +138,8 @@
       font-size: 0.82rem;
       color: var(--text-muted);
       display: flex;
-      justify-content: space-between;
+      white-space: nowrap;
+      gap: 8px;
     }
     .progress-bar {
       height: 12px;
@@ -332,6 +333,12 @@
         <div class="progress-label"><span id="pct-dh102">0%</span></div>
         <div class="progress-bar"><div class="progress-fill" id="fill-dh102"></div></div>
       </div>
+      <div class="card" id="card-199">
+        <strong>📞 SLTB dừng 199</strong>
+        <div class="metric" id="metric-199">-</div>
+        <div class="progress-label"><span id="pct-199">0%</span> <strong>gọi lên 199</strong> ~ <span id="tb-199">0</span> TB</div>
+        <div class="progress-bar"><div class="progress-fill" id="fill-199"></div></div>
+      </div>
     </section>
 
     <section class="charts">
@@ -380,13 +387,16 @@
       "46K (14/04)": { file: "ussd_46k.csv", label: "46K tại xã thử nghiệm (14/04)" }
     };
 
+    const datasetFile199 = "ussd_199.csv";
+
     const state = {
       activeDataset: "100K (02/04)",
       activeDate: null,
       activeChannel: "098",
       activeDonutChannel: "098",
       data: {},
-      cohort: []
+      cohort: [],
+      data199: []
     };
 
     const dateSelect = document.getElementById("date-select");
@@ -399,18 +409,22 @@
     const metricDh101 = document.getElementById("metric-dh101");
     const metricMua101 = document.getElementById("metric-mua101");
     const metricDh102 = document.getElementById("metric-dh102");
+    const metric199 = document.getElementById("metric-199");
+    const tb199 = document.getElementById("tb-199");
 
     const pctDh098 = document.getElementById("pct-dh098");
     const pctMua098 = document.getElementById("pct-mua098");
     const pctDh101 = document.getElementById("pct-dh101");
     const pctMua101 = document.getElementById("pct-mua101");
     const pctDh102 = document.getElementById("pct-dh102");
+    const pct199 = document.getElementById("pct-199");
 
     const fillDh098 = document.getElementById("fill-dh098");
     const fillMua098 = document.getElementById("fill-mua098");
     const fillDh101 = document.getElementById("fill-dh101");
     const fillMua101 = document.getElementById("fill-mua101");
     const fillDh102 = document.getElementById("fill-dh102");
+    const fill199 = document.getElementById("fill-199");
 
     const cohortContainer = document.getElementById("cohort-container");
 
@@ -515,6 +529,11 @@
       const sltbDh101 = Number(record.sltb_dh_101 || 0);
       const sltbMua101 = Number(record.sltb_mua_101 || 0);
       const sltbDh102 = Number(record.sltb_dh_102 || 0);
+      
+      // Get data from ussd_199.csv for the active date
+      const record199 = state.data199.find(row => row.date === state.activeDate);
+      const sltb199 = record199 ? Number(record199.sltb || 0) : 0;
+      const sl199 = record199 ? Number(record199.sl_199 || 0) : 0;
 
       metricTotal.textContent = numberFormat(sltb);
       metricDh098.textContent = numberFormat(sltbDh098);
@@ -522,24 +541,29 @@
       metricDh101.textContent = numberFormat(sltbDh101);
       metricMua101.textContent = numberFormat(sltbMua101);
       metricDh102.textContent = numberFormat(sltbDh102);
+      metric199.textContent = numberFormat(sltb199);
+      tb199.textContent = numberFormat(sl199);
 
       const pDh098 = percent(sltbDh098, sltb);
       const pMua098 = percent(sltbMua098, sltbDh098);
       const pDh101 = percent(sltbDh101, sltb);
       const pMua101 = percent(sltbMua101, sltbDh101);
       const pDh102 = percent(sltbDh102, sltb);
+      const p199 = percent(sl199, sltb199);
 
       pctDh098.textContent = `${pDh098}%`;
       pctMua098.textContent = `${pMua098}%`;
       pctDh101.textContent = `${pDh101}%`;
       pctMua101.textContent = `${pMua101}%`;
       pctDh102.textContent = `${pDh102}%`;
+      pct199.textContent = `${p199}%`;
 
       updateProgress(fillDh098, pDh098);
       updateProgress(fillMua098, pMua098);
       updateProgress(fillDh101, pDh101);
       updateProgress(fillMua101, pMua101);
       updateProgress(fillDh102, pDh102);
+      updateProgress(fill199, p199);
     }
 
     function renderTrendChart() {
@@ -755,6 +779,7 @@
         state.data[key] = await loadCsv(file);
       }
       state.cohort = await loadCsv("f_date.csv");
+      state.data199 = await loadCsv(datasetFile199);
       populateDates();
       refreshAll();
       renderCohort();
